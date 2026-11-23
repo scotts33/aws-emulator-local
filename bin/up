@@ -21,8 +21,15 @@ docker build --platform linux/arm64 -t "$IMAGE" "$ROOT"
 exec docker run --rm \
   --memory=2g \
   --memory-swap=2g \
+  --read-only \
+  --cap-drop=ALL \
+  --security-opt=no-new-privileges \
+  --pids-limit=256 \
+  --tmpfs /tmp:rw,nosuid,nodev,noexec,size=64m \
   -p "127.0.0.1:${PORT}:${PORT}" \
   -e "HOME=${HOME}" \
+  -e EMULATOR_TELEMETRY=off \
   -v "${HOME}/.aws/emulator:${HOME}/.aws/emulator" \
   "$IMAGE" \
-  --port="${PORT}"
+  --port="${PORT}" \
+  --telemetry off

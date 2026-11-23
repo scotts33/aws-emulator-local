@@ -1,0 +1,119 @@
+# Private AWS Emulator for the hardened RKE2 lab.
+# Signature checks stay on. The Service is ClusterIP. kubectl port-forward
+# is the only path from the Mac, and Lima does not forward this port.
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: aws-emulator
+  labels:
+    pod-security.kubernetes.io/enforce: restricted
+    pod-security.kubernetes.io/audit: restricted
+    pod-security.kubernetes.io/warn: restricted
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: aws-emulator
+  namespace: aws-emulator
+automountServiceAccountToken: false
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: aws-emulator
+  namespace: aws-emulator
+spec:
+  type: ClusterIP
+  selector:
+    app: aws-emulator
+  ports:
+    - name: https
+      port: 9297
+      targetPort: https
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: aws-emulator
+  namespace: aws-emulator
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: aws-emulator
+  template:
+    metadata:
+      labels:
+        app: aws-emulator
+    spec:
+      automountServiceAccountToken: false
+      serviceAccountName: aws-emulator
+      enableServiceLinks: false
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
+        fsGroup: 1000
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: aws-emulator
+          image: docker.io/library/aws-emulator-local:local
+          imagePullPolicy: Never
+          args: ["--port=9297", "--telemetry", "off"]
+          env:
+            - name: HOME
+              value: /home/emulator
+            - name: EMULATOR_BIND_ADDRESS
+              value: 0.0.0.0
+            - name: EMULATOR_TELEMETRY
+              value: "off"
+          ports:
+            - name: https
+              containerPort: 9297
+              protocol: TCP
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            runAsNonRoot: true
+            runAsUser: 1000
+            runAsGroup: 1000
+            capabilities:
+              drop: ["ALL"]
+            seccompProfile:
+              type: RuntimeDefault
+          resources:
+            requests:
+              cpu: 100m
+              memory: 256Mi
+            limits:
+              cpu: "1"
+              memory: 2Gi
+          readinessProbe:
+            tcpSocket:
+              port: https
+            initialDelaySeconds: 2
+            periodSeconds: 5
+          volumeMounts:
+            - name: home
+              mountPath: /home/emulator
+            - name: tmp
+              mountPath: /tmp
+      volumes:
+        - name: home
+          emptyDir:
+            sizeLimit: 64Mi
+        - name: tmp
+          emptyDir:
+            sizeLimit: 64Mi
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: deny-all
+  namespace: aws-emulator
+spec:
+  podSelector: {}
+  policyTypes:
+    - Ingress
+    - Egress

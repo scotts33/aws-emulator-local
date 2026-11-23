@@ -26,3 +26,9 @@ bash bin/smoke
 `bin/smoke` exits before any AWS call when `AWS_ENDPOINT_URL` is unset or is not that local URL. Against a running emulator it checks health (`ok`), account `000000000000`, and a create-then-read on S3, DynamoDB, SQS, and SNS. The same names work on a second run. State is in memory and disappears when the container stops.
 
 Stop the emulator with Ctrl+C in the `bin/up` terminal.
+
+`bin/up` also runs the container read-only, drops every capability, and turns telemetry off. Authentication stays on.
+
+## RKE2
+
+`deploy/rke2/aws-emulator.yaml` is the same process for the hardened lab at `~/rke2-lab`. The namespace enforces restricted Pod Security. The Service is ClusterIP, ingress and egress are denied, and the Mac reaches it only with `kubectl port-forward` to `127.0.0.1`. The lab script `scripts/platform.sh` builds this image inside the VM and installs Keycloak and Rancher beside it. The emulator does not accept Keycloak tokens. Keycloak signs in to Rancher. The emulator still requires the SigV4 credentials it generates in the pod.

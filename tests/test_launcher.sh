@@ -78,6 +78,24 @@ fi
 if ! grep -q 'EMULATOR_BIND_ADDRESS=0.0.0.0' <<<"$image"; then
   say "FAIL Dockerfile does not bind 0.0.0.0 inside the container"
 fi
+if ! grep -q 'EMULATOR_TELEMETRY=off' <<<"$image"; then
+  say "FAIL Dockerfile does not turn telemetry off"
+fi
+if ! grep -q -- '--read-only' <<<"$text"; then
+  say "FAIL launcher root filesystem is writable"
+fi
+if ! grep -q -- '--cap-drop=ALL' <<<"$text"; then
+  say "FAIL launcher does not drop all capabilities"
+fi
+if ! grep -q 'no-new-privileges' <<<"$text"; then
+  say "FAIL launcher allows new privileges"
+fi
+if ! grep -q 'EMULATOR_TELEMETRY=off' <<<"$text"; then
+  say "FAIL launcher does not set EMULATOR_TELEMETRY=off"
+fi
+if ! grep -q -- '--telemetry off' <<<"$text"; then
+  say "FAIL launcher does not pass --telemetry off"
+fi
 
 if [[ "$fail" != 0 ]]; then
   exit 1
