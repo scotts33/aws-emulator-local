@@ -41,6 +41,6 @@ run_case() {
   echo "CASE ${label} clients=none"
 }
 
-run_case unset env -u AWS_ENDPOINT_URL
-run_case nonlocal env AWS_ENDPOINT_URL="https://s3.us-east-1.amazonaws.com"
+run_case unset env -u AWS_ENDPOINT_URL bash
+run_case nonlocal env AWS_ENDPOINT_URL="https://s3.us-east-1.amazonaws.com" bash
 echo "smoke refuses passed"
