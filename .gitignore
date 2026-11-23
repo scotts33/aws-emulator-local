@@ -1,0 +1,7 @@
+.aws/
+emulator_credentials
+ca.pem
+truststore.p12
+*.pem
+*.p12
+*.rpm

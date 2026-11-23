@@ -1,0 +1,33 @@
+#!/usr/bin/env bash
+# Point this shell at the local emulator and drop real AWS credentials.
+#   eval "$(bin/emulator-env)"
+# or: source bin/emulator-env
+# The credential file, config, and CA stay under ~/.aws/emulator/9297.
+set -euo pipefail
+
+PORT=9297
+BASE="${HOME}/.aws/emulator/${PORT}"
+
+emit() {
+  cat <<EOF
+unset AWS_ACCESS_KEY_ID
+unset AWS_SECRET_ACCESS_KEY
+unset AWS_SESSION_TOKEN
+unset AWS_PROFILE
+export AWS_ENDPOINT_URL='https://127.0.0.1:${PORT}'
+export AWS_SHARED_CREDENTIALS_FILE='${BASE}/emulator_credentials'
+export AWS_CONFIG_FILE='${BASE}/config'
+export AWS_CA_BUNDLE='${BASE}/ca.pem'
+export AWS_EC2_METADATA_DISABLED=true
+export AWS_DISABLE_HOST_PREFIX_INJECTION=true
+export AWS_REGION=us-east-1
+export AWS_DEFAULT_REGION=us-east-1
+export AWS_PAGER=''
+EOF
+}
+
+if [[ "${BASH_SOURCE[0]}" != "$0" ]]; then
+  eval "$(emit)"
+else
+  emit
+fi

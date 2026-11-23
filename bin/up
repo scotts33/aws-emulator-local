@@ -1,0 +1,28 @@
+#!/usr/bin/env bash
+# Build and start the official AWS Emulator for Apple silicon.
+# Host port is published only on 127.0.0.1. Auth stays on.
+# Credentials and the CA are written under ~/.aws/emulator/9297, not into git.
+set -euo pipefail
+
+ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+PORT=9297
+IMAGE=aws-emulator-local
+RPM_NAME=aws-emulator-aarch64.rpm
+
+if ! grep -q -- "$RPM_NAME" "$ROOT/Dockerfile"; then
+  echo "Dockerfile does not install ${RPM_NAME}" >&2
+  exit 1
+fi
+
+mkdir -p "${HOME}/.aws/emulator"
+
+docker build --platform linux/arm64 -t "$IMAGE" "$ROOT"
+
+exec docker run --rm \
+  --memory=2g \
+  --memory-swap=2g \
+  -p "127.0.0.1:${PORT}:${PORT}" \
+  -e "HOME=${HOME}" \
+  -v "${HOME}/.aws/emulator:${HOME}/.aws/emulator" \
+  "$IMAGE" \
+  --port="${PORT}"
